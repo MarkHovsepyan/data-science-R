@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1530225581292.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2485286308",
+    "id" : "5D59D2B5",
+    "lastKnownWriteTime" : 1530229016,
+    "last_content_update" : 1530229016295,
+    "path" : "D:/Programming/R/Data Science (AUA)/Lectures/markdown example.Rmd",
+    "project_path" : "markdown example.Rmd",
+    "properties" : {
+        "cursorPosition" : "12,11",
+        "scrollLine" : "0"
+    },
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

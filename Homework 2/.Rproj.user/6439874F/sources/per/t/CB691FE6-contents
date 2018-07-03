@@ -1,0 +1,108 @@
+---
+title: "HW#2"
+author: "Mark Hovsepyan"
+date: "July 3, 2018"
+output: pdf_document
+---
+
+
+
+In this homework you will work on video games dataset containing information about popular video games, their sales in North America, Europe, Japan and globally in the world. In the dataset ratings by critics and users are presented and ratings of the games. 
+
+Solve the problems and submit the .Rmd file.
+----------------------------------------------------------------------------
+
+WARNINGS!!! (If not done you will lose points.)
+1) Make sure to put titles on the plots and texts on axes.
+2) If the plot is not interpretable, zoom on "x" or "y" axes to make the
+graph more interpretable (P4,P5, P7 and P8).
+--------------------------------------------------------
+
+#P1)
+Import the dataframe in R and with the use of dplyr subset it using the following information.
+
+-remove columns Publisher, JP_Sales (Sales in Japan), Critic_Count, User_Count and Developer. (1p)
+-Multiply the numbers in NA_Sales, EU_Sales and GP_Sales by 1 million as they are given in millions of sales. (1p)
+-include only those for which NA_Sales>=20000, EU_Sales>=20000 and Ranking is among Everyone("E"),Mature("M"), Teen("T"), Everyone 10+("E10+") and Adults Only ("AO"). (1p)
+
+----------------------------------------------------------------------------
+
+#P2)
+Use data cleaning tools to clean the data.
+
+(a)
+Look at the columns which are either numeric or integer. Make sure they contain only numbers or NA's (nothing else). (1p)
+(b)
+Critic scores can be from 0 to 100 and users scores from 0 to 10. If there are values not from these intervals clean that observations using ifelse statement. (2p)
+(c)
+Look at the Genres: check if all categories are unique and if not, clean them so that there are no duplicate names. (2p)
+
+----------------------------------------------------------------------------
+
+#P3)
+Create a scatterplot displaying how User scores and Critics score are interconnected
+-make the point shape triangle, color red and transperancy 20%. 
+Explain what you see in the graph. (1p)
+
+----------------------------------------------------------------------------
+
+#P4)
+Construct a graph showing how the global sales of the game is dependent of a score given by the user and explain what you see in the graph. (Hint! ?options to display values without "e" short notation) (1p)
+
+----------------------------------------------------------------------------
+
+#P5)
+Make previous plot more appealing using the following. (1p)
+-x axis name -- "Score given by the User" color red, bold size=15
+-y axis name -- "Global Sales of the game" color red, bold size=15
+-points (shape - square, color-red, size- 1.5)
+-title of the plot -- "User Score versus Global Sales"
+- Make panel background color #09f2d5
+- axis texts bold black
+
+----------------------------------------------------------------------------
+
+#P6)
+Create a histogram to find the distribution of the games by Genre. What are the top 3 Genres. Rotate Genre names on "x" axis to avoid overlapping text (Hint! ?element_text, ?theme) (2p)
+
+----------------------------------------------------------------------------
+
+#P7)
+Define the Rating as Factor and use faceting to plot the User score of the game versus the North America Sales for different Ratings. Make comment about the results.(2p)
+
+----------------------------------------------------------------------------
+
+#P8)
+Create a boxplot where "x axis" represents the Genre and "y axis" the Global Sales of the video game for a particular Genre. Make the text on "x" axis vertical (Hint! ?theme, ?element_text). Make some comments.(2p) 
+
+----------------------------------------------------------------------------
+
+#P9)
+Zoom the previous plot (Numbers on "y" axis (0,2million)) to clearly see the boxplots for each Genre and make comments. (1p)
+
+----------------------------------------------------------------------------
+
+#P10)
+Create a barplot using dyplr functionalities and faceting to show the total Global Sales for each year for each Rating. (2p)
+
+----------------------------------------------------------------------------
+
+#P11)
+Use the pipe operator and functions from dplyr package and show the number of video games in each genre in descending order. (2p)
+
+----------------------------------------------------------------------------
+
+#P12)
+Use dplyr to create a new variable (CU_Score) in Video dataset which for each video game will show the average of Critic score and 10* User Score. (2p)
+
+----------------------------------------------------------------------------
+
+#P13)
+Use the pipe operator and functions from dplyr package to find the top 3 platforms and the number of video games developed for each of them. (2p)
+
+----------------------------------------------------------------------------
+
+#P14)
+We are interested in the number of video games developed for top platforms for different years. Pick the top 3 platforms from previous problem and make other platforms as "Other" using dplyr (Hint! ifelse statement). Thereafter remove observations from dataframe which have NA values (Hint! ?complete.cases).Now use faceting to draw the distribution of games for each year for each platform. Make text on "x" axis vertical and size=6. Make comments how the number of video games changed for each platform for different years.(4p)
+
+----------------------------------------------------------------------------

@@ -1,1 +1,1 @@
-# data-science-R
+Every directory contains an RStudio project and can be easily opened and executed in Rstudio environment using .Rproj files.

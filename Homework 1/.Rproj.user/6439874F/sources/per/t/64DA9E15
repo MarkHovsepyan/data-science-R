@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1530143094530.000,
+    "dirty" : true,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1661138611",
+    "id" : "64DA9E15",
+    "lastKnownWriteTime" : 1530224894,
+    "last_content_update" : 1530224909212,
+    "path" : "D:/Programming/R/Data Science (AUA)/Homework 1/HW#1.R",
+    "project_path" : "HW#1.R",
+    "properties" : {
+        "cursorPosition" : "192,0",
+        "scrollLine" : "172"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
