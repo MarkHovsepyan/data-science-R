@@ -90,6 +90,7 @@ summary(movies_num)
 ## Data manipulation and transformation, dplyr
 
 library(dplyr)
+library(ggplot2)
 
 summer <- read.csv("summer.csv", stringsAsFactors = F)
 
@@ -129,8 +130,66 @@ ggplot(sum_movie, aes(x = mean, y = standard_dev, size = count))+
   labs(x = "Mean", y = "Standard deviation", title = "Mean vs Standard Deviation for genres")
 
 
+## reading nba data for 2015
 nba15 <- read.csv("nba15.csv", stringsAsFactors = F)
 str(nba15)
 
 nba15$GAME_DATE_EST <- as.Date(nba15$GAME_DATE_EST, format = "%Y-%m-%d")
 str(nba15)
+
+## calculating difference in days using "mutate"
+nba15 <- nba15 %>%
+  arrange(GAME_DATE_EST) %>%
+  group_by(TEAM_ABBREVIATION) %>%
+  mutate(REST_DAYS = c(NA, diff(GAME_DATE_EST)))
+
+summary(nba15)
+
+nba15$REST_DAYS_F <- factor(nba15$REST_DAYS)
+levels(nba15$REST_DAYS_F)
+
+
+## boxplots to see REST DAYS and PTS correlations
+ggplot(nba15, aes(x = REST_DAYS_F, y = PTS))+
+  geom_boxplot()+
+  labs(x = "REST DAYS", y = "POINTS", title = "Boxplot of Points by REST DAYS")
+
+## faceting for HOME and AWAY teams
+ggplot(nba15, aes(x = REST_DAYS_F, y = PTS))+
+  geom_boxplot()+
+  labs(x = "REST DAYS", y = "POINTS", title = "Boxplot of Points by REST DAYS for both HOME and AWAY Teams")+
+  facet_grid(.~H)
+
+
+## Create two variables: WIN_H is the point difference between Home Points and Away Points
+## WIN_A is the same with opposite sign: If the value is positive then home team
+## won, if negative then away team won
+
+nba15 <- nba15 %>%
+  arrange(GAME_DATE_EST, GAME_ID, H) %>%
+  group_by(GAME_ID) %>%
+  mutate(WIN_H = c(NA, diff(PTS)),
+         WIN_A = -dplyr::lead(WIN_H, 1))
+
+nba15 <- as.data.frame(nba15)
+
+head(nba15)
+
+
+nba15$PTS_DIF <- rowSums(nba15[ , c("WIN_A", "WIN_H")], na.rm = T)
+
+## Use nested ifelse to create a variable that shows whether the team won or lost
+nba15$WIN_LOSE <- ifelse(nba15$PTS_DIF > 0 & nba15$H == 'H', "WIN",
+                         ifelse(nba15$PTS_DIF > 0 & nba15$H == 'A', "WIN", "LOSE"))
+
+table(nba15$PTS_DIF > 0, nba15$WIN_LOSE)
+
+## plot the results to se the correlation for H/A teams
+ggplot(nba15, aes(x = REST_DAYS_F, fill = WIN_LOSE))+
+  geom_bar(position = "fill")+
+  facet_grid(.~H)+
+  labs(x = "REST DAYS", y = "Probabilities", title = "Probability to win for home/away",
+       fill = "Result of the game")
+
+
+
