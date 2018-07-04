@@ -173,12 +173,11 @@ phones <- c("Anna 077-789663", "Hagopik 99656565",
             "Serozh2 099-65-6569 MALYAR")
 
 names <- str_extract(phones, "^[A-Za-z]+")
-names
+names # names only
 
-numbers <- str_replace_all(str_extract(phones, "[0-9]+[-]?[0-9]+[-]?[0-9]+"),
-                       pattern = "-", replacement =  "")
-numbers
-
+numbers <- str_extract(phones, "\\b[-0-9]+\\b") %>%
+  str_remove_all("-")
+numbers # numbers only
 
 phones_data <- data.frame("Name" = names, "Phone" = numbers)
 phones_data # data-frame of names and numbers
