@@ -5,10 +5,10 @@ library(ggplot2)
 data(iris)
 str(iris)
 
-g1 <- ggplot(data = iris, aes(x=Sepal.Length, y=Sepal.Width))
+g1 <- ggplot(data = iris, aes(x = Sepal.Length, y = sSepal.Width))
 
 ## scatterplot
-g1+geom_point(color="red", size=4, shape=20)
+g1+geom_point(color = "red", size = 4, shape = 20)
 g1+geom_line()
 
 
@@ -20,7 +20,7 @@ brewer.pal(n=5, name = "Set3")
 
 
 g1+
-  geom_point(aes(color = Species), size=4, shape=20)+
+  geom_point(aes(color = Species), size = 4, shape = 20)+
   scale_color_manual(values = c("red", "green", "orange"))
 
 
@@ -31,22 +31,22 @@ wes_palette(name = "IsleofDogs2")
 wes_palettes$Darjeeling1
 
 g1+
-  geom_point(aes(color = Species), size=4, shape=20)+
+  geom_point(aes(color = Species), size = 4, shape = 20)+
   scale_color_manual(values = c("#FF0000", "#00A08A", "#F2AD00"))
 
 g1+
-  geom_point(aes(color = Species), size=4, shape=20)+
+  geom_point(aes(color = Species), size = 4, shape = 20)+
   scale_color_manual(values = wes_palette("GrandBudapest1"))
 
 
 ## used color on petal length
 g1+
-  geom_point(aes(color = Petal.Length), size=4, shape=20)
+  geom_point(aes(color = Petal.Length), size = 4, shape = 20)
 
 
 ## used shape for species
 g1+
-  geom_point(aes(shape = Species), size=4)
+  geom_point(aes(shape = Species), size = 4)
 
 ## used size for Petal.Length and color for species
 g1+
