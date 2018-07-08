@@ -1,22 +1,27 @@
 ---
-title: "HW#2"
+title: "Homework 2"
 author: "Mark Hovsepyan"
 date: "July 3, 2018"
 output: pdf_document
 ---
 
-
-
 In this homework you will work on video games dataset containing information about popular video games, their sales in North America, Europe, Japan and globally in the world. In the dataset ratings by critics and users are presented and ratings of the games. 
 
 Solve the problems and submit the .Rmd file.
+
 ----------------------------------------------------------------------------
 
 WARNINGS!!! (If not done you will lose points.)
 1) Make sure to put titles on the plots and texts on axes.
 2) If the plot is not interpretable, zoom on "x" or "y" axes to make the
 graph more interpretable (P4,P5, P7 and P8).
+
 --------------------------------------------------------
+
+```{r libraries, include=FALSE}
+library(dplyr)
+library(ggplot2)
+```
 
 #P1)
 Import the dataframe in R and with the use of dplyr subset it using the following information.
@@ -25,7 +30,20 @@ Import the dataframe in R and with the use of dplyr subset it using the followin
 -Multiply the numbers in NA_Sales, EU_Sales and GP_Sales by 1 million as they are given in millions of sales. (1p)
 -include only those for which NA_Sales>=20000, EU_Sales>=20000 and Ranking is among Everyone("E"),Mature("M"), Teen("T"), Everyone 10+("E10+") and Adults Only ("AO"). (1p)
 
+```{r}
+games <- read.csv("Video_Games.csv", stringsAsFactors = F)
+
+games_new <- games %>% 
+  select(-c('Publisher', 'JP_Sales', 'Critic_Count', 'User_Count', 'Developer')) %>%
+  transform(NA_Sales = NA_Sales * 1000000, 
+            EU_Sales = EU_Sales * 1000000, 
+            Global_Sales = Global_Sales * 1000000) %>%
+  filter(NA_Sales >= 20000 & EU_Sales >= 20000) %>% 
+  filter(Rating == "E" | Rating == "M" | Rating == "T" | Rating == "E10+" | Rating == "AO")
+```
+
 ----------------------------------------------------------------------------
+
 
 #P2)
 Use data cleaning tools to clean the data.
@@ -37,6 +55,50 @@ Critic scores can be from 0 to 100 and users scores from 0 to 10. If there are v
 (c)
 Look at the Genres: check if all categories are unique and if not, clean them so that there are no duplicate names. (2p)
 
+
+```{r}
+sapply(games_new, class)
+```
+
+There are some problems here, Year and User_Score are not numeric, while they should be.
+
+
+`r unique(games_new$Year)` this shows that there are "N/A" values.
+
+```{r}
+games_new$Year <- gsub("N/A", NA, games_new$Year)
+games_new$Year <- as.numeric(games_new$Year)
+
+```
+Now 'Year' is converted to numeric type and "N/A"s have turned into NA values. 
+
+
+Let's use the same tactic for 'User_Score'
+
+```{r}
+unique(games_new$User_Score)
+
+games_new$User_Score <- gsub("tbd", NA, games_new$User_Score)
+games_new$User_Score <- as.numeric(games_new$User_Score)
+
+sapply(games_new, class) # now User_Score is numeric too
+```
+
+
+We can continue and remove the values that are out of range
+```{r}
+games_new$Critic_Score = ifelse(games_new$Critic_Score > 100 | 
+                                  games_new$Critic_Score < 0, NA, games_new$Critic_Score)
+games_new$User_Score = ifelse(games_new$User_Score > 10 |
+                                games_new$User_Score < 0, NA, games_new$User_Score)
+```
+
+
+Finally, we'll clean the genre
+```{r}
+games_new$Genre <- games_new$Genre %>% toupper() %>% trimws()
+unique(games_new$Genre) # all duplicates joined in unique categories
+```
 ----------------------------------------------------------------------------
 
 #P3)
@@ -44,10 +106,32 @@ Create a scatterplot displaying how User scores and Critics score are interconne
 -make the point shape triangle, color red and transperancy 20%. 
 Explain what you see in the graph. (1p)
 
+```{r}
+ggplot(data = games_new, aes(x = User_Score, y = Critic_Score)) +
+  geom_point(color = "red", shape = 2, alpha = 0.2) +
+  labs(title = "Correlation plot for User Score and Critic Score", 
+       x = "User Score", y = "Critic Score")
+```
+
+According to this plot, there is high positive corelation between User Score and Critic Score.
+This tells us that games mostly get high scores from users when they have gotten high scores from critics and the other way around. After all, users seem to have a good taste in games as well.
+
 ----------------------------------------------------------------------------
 
 #P4)
 Construct a graph showing how the global sales of the game is dependent of a score given by the user and explain what you see in the graph. (Hint! ?options to display values without "e" short notation) (1p)
+
+```{r}
+options(scipen = 999) # remove scientific notation
+
+ggplot(data = games_new, aes(x = User_Score, y = Global_Sales)) +
+  geom_point() +
+  labs(title = "Correlation plot for User Score and Global Sales", 
+       x = "User Score", y = "Global Sales") +
+  ylim(0, 30000000) # was not clear
+```
+
+The correlation is clearly there, so the games with higher User Score are likely to have higher Global Sales. However, the correlation is not too strong, it tells us a pattern but we can see that most of the games fall below a particular sales line regardless of the score.
 
 ----------------------------------------------------------------------------
 
@@ -60,49 +144,154 @@ Make previous plot more appealing using the following. (1p)
 - Make panel background color #09f2d5
 - axis texts bold black
 
+
+```{r}
+ggplot(data = games_new, aes(x = User_Score, y = Global_Sales)) +
+  geom_point(color = "red", shape = 0, size = 1.5) +
+  labs(title = "User Score versus Global Sales", 
+       x = "Score given by the User", y = "Global Sales of the game") +
+  ylim(0, 30000000) + 
+  theme(axis.title = element_text(size = 15, color = "red", face = "bold"),
+        panel.background = element_rect(fill = "#09f2d5"),
+        axis.text = element_text(face = "bold", color = "black"))
+```
+
 ----------------------------------------------------------------------------
 
 #P6)
 Create a histogram to find the distribution of the games by Genre. What are the top 3 Genres. Rotate Genre names on "x" axis to avoid overlapping text (Hint! ?element_text, ?theme) (2p)
+
+```{r}
+ggplot(data = games_new, aes(x = Genre)) +
+  geom_histogram(stat = "count") +
+  theme(axis.text.x = element_text(angle = -60, hjust = 0)) +
+  labs(title = "Distribution of the Games by Genre")
+```
 
 ----------------------------------------------------------------------------
 
 #P7)
 Define the Rating as Factor and use faceting to plot the User score of the game versus the North America Sales for different Ratings. Make comment about the results.(2p)
 
+```{r}
+ggplot(data = games_new, aes(x=User_Score, y=NA_Sales)) + 
+  geom_point() +
+  facet_grid(.~Rating) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  ylim(0, 5000000) +
+  labs(title = "User score of the game versus the North America Sales by Ratings")
+```
+
+We have some mostly predictable results, in all cases there is positive correlation between scores and sales. Interestingly, E and M rated games get more scores with lower user scores than other types.
+
 ----------------------------------------------------------------------------
 
 #P8)
 Create a boxplot where "x axis" represents the Genre and "y axis" the Global Sales of the video game for a particular Genre. Make the text on "x" axis vertical (Hint! ?theme, ?element_text). Make some comments.(2p) 
+
+```{r}
+ggplot(data = games_new, aes(x = Genre, y = Global_Sales)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(title = "Boxplots of Global Sales by Genres")
+```
+
+Outliers cause the plots to become unreadable. Hence, without modifications any there is hardly anything notable here.
 
 ----------------------------------------------------------------------------
 
 #P9)
 Zoom the previous plot (Numbers on "y" axis (0,2million)) to clearly see the boxplots for each Genre and make comments. (1p)
 
+```{r}
+ggplot(data = games_new, aes(x = Genre, y = Global_Sales)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ylim(0, 2000000) +
+  labs(title = "Boxplots of Global Sales by Genres")
+```
+
+Now the plot is much more useful. Firstly, clearly the data is not symetric for any of the genres. We can tell that despite of all these outliers, most of the sales are concentrated approximately between 0 and 1000000 and median is somewhere between 250000 and 350000.
+
 ----------------------------------------------------------------------------
 
 #P10)
 Create a barplot using dyplr functionalities and faceting to show the total Global Sales for each year for each Rating. (2p)
+
+```{r}
+games_new %>%
+  group_by(Year, Global_Sales, Rating) %>%
+  summarise(count = n()) %>%
+  ggplot(aes(x = Year, y = Global_Sales, fill = Rating)) +
+  geom_bar(stat = "identity") +
+  facet_grid(.~Rating) + 
+  labs(title = "Global Sales for Years and Ratings", y = "Global Sales")
+```
+
+The plot tells us that E rated games usually have the highest Global Sales as we have seen before. In contrast, E10+ rated games usually have the lowest Global Sales. M rated games get some noticable increase in sales thorughout years, while other types have some peak moments and don't have such a steady growth, but rather sudden deviations.
 
 ----------------------------------------------------------------------------
 
 #P11)
 Use the pipe operator and functions from dplyr package and show the number of video games in each genre in descending order. (2p)
 
+```{r}
+games_new %>%
+    group_by(Genre) %>%
+    summarise(count = n()) %>%
+    arrange(desc(count))
+```
+
 ----------------------------------------------------------------------------
 
 #P12)
 Use dplyr to create a new variable (CU_Score) in Video dataset which for each video game will show the average of Critic score and 10* User Score. (2p)
+
+```{r}
+games_new = games_new %>%
+  mutate(CU_Score = rowMeans(cbind(User_Score*10, Critic_Score)))
+
+head(games_new$CU_Score)
+```
+Some averages from the first few observations.
 
 ----------------------------------------------------------------------------
 
 #P13)
 Use the pipe operator and functions from dplyr package to find the top 3 platforms and the number of video games developed for each of them. (2p)
 
+```{r}
+top_platforms <- games_new %>%
+  group_by(Platform) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count)) %>%
+  head(3)
+
+top_platforms
+```
+
 ----------------------------------------------------------------------------
 
 #P14)
 We are interested in the number of video games developed for top platforms for different years. Pick the top 3 platforms from previous problem and make other platforms as "Other" using dplyr (Hint! ifelse statement). Thereafter remove observations from dataframe which have NA values (Hint! ?complete.cases).Now use faceting to draw the distribution of games for each year for each platform. Make text on "x" axis vertical and size=6. Make comments how the number of video games changed for each platform for different years.(4p)
+
+```{r}
+games_new$Platform <-
+  ifelse(games_new$Platform %in% top_platforms$Platform, top_platforms$Platform, "Other")
+
+games_new <- games_new[complete.cases(games_new), ]
+
+games_new %>%
+    group_by(Platform, Year) %>%
+    summarise(count = n()) %>%
+    ggplot(aes(x = Year, y = count, fill = Platform)) +
+    geom_bar(stat = "identity") +
+    facet_grid(.~Platform) +
+    labs(title = "Distribution of Games for Years and Platforms", y = "Number of Games") +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 10))
+```
+
+I am using the cleared version of the dataset, so this is a result for a subset.
+The plot shows that before some point (about 2015), platforms categorized as "Other" were dominating the market. Afterwards, there is growth for PS2 and later on some growth for PS3 and Xbox 360. This is natural, due to the advancement of technology and generation change for consoles. However, "Other" platfroms keep their place, as combined they are taking a huge part of the market, altough they are not top 3. Moreover, because of the rapid growth of PS3, X360 didn't get such a rapid increase and got a gradual one eventually getting more games than PS3. "Other" category, also includes PS4 and Xbox One, therefore its increase close to modern generation is obvious. All 3 of my top are currently not viable and are considered obsolete, which is shown on the graph.
 
 ----------------------------------------------------------------------------
