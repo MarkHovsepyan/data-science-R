@@ -5,7 +5,7 @@ library(ggplot2)
 data(iris)
 str(iris)
 
-g1 <- ggplot(data = iris, aes(x = Sepal.Length, y = sSepal.Width))
+g1 <- ggplot(data = iris, aes(x = Sepal.Length, y = Sepal.Width))
 
 ## scatterplot
 g1+geom_point(color = "red", size = 4, shape = 20)
@@ -196,5 +196,4 @@ ggplot(movies, aes(x=Metascore, y=imdbRating))+
   theme(axis.text.x = element_text(size = 15, color = "red", face = "italic"),
         axis.title.x = element_text(size = 16, color = "green"),
         axis.ticks.x = element_line(size = 1.5, color = "red"))
-
 

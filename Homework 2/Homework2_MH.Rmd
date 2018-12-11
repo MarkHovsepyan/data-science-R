@@ -21,6 +21,7 @@ graph more interpretable (P4,P5, P7 and P8).
 ```{r libraries, include=FALSE}
 library(dplyr)
 library(ggplot2)
+library(magrittr)
 ```
 
 #P1)
@@ -34,12 +35,9 @@ Import the dataframe in R and with the use of dplyr subset it using the followin
 games <- read.csv("Video_Games.csv", stringsAsFactors = F)
 
 games_new <- games %>% 
-  select(-c('Publisher', 'JP_Sales', 'Critic_Count', 'User_Count', 'Developer')) %>%
-  transform(NA_Sales = NA_Sales * 1000000, 
-            EU_Sales = EU_Sales * 1000000, 
-            Global_Sales = Global_Sales * 1000000) %>%
-  filter(NA_Sales >= 20000 & EU_Sales >= 20000) %>% 
-  filter(Rating == "E" | Rating == "M" | Rating == "T" | Rating == "E10+" | Rating == "AO")
+  select(-c("Publisher", "JP_Sales", "Critic_Count", "User_Count", "Developer")) %>%
+  mutate(NA_Sales = 10^6 * NA_Sales, EU_Sales = 10^6 * EU_Sales, Global_Sales = 10^6 * Global_Sales) %>%
+  filter(NA_Sales >= 20000 & EU_Sales >= 20000 & Rating %in% c("E", "M", "T", "E10+", "AO"))
 ```
 
 ----------------------------------------------------------------------------

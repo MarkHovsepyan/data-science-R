@@ -1,0 +1,699 @@
+---
+title: "Group Project"
+author: "Mark Hovsepyan, Vazgen Tadevosyan, Garen Danageozian, Davit Gadyan"
+date: "July 22, 2018"
+output: pdf_document
+---
+
+# Homework #4: Group Assignment
+
+
+```{r warning=FALSE,message=FALSE,echo=FALSE}
+## All the libraries and dependencies needed for this project
+## Warning: Install and call these in order to be able to run the whole code of the project
+
+# install.packages('Quandl')
+library(Quandl)
+library(ggplot2)
+# install.packages('data.table')
+library(data.table)
+# install.packages('kableExtra')
+library(kableExtra)
+library(rvest)
+library(stringr)
+library(dplyr)
+library(tm)
+library(wordcloud)
+library(qdap)
+library(rlist)
+```
+
+## Quandl API for Scraping Quantitative Data
+
+The purpose of quantitave data analysis of our project is to explore and analyze the economic conditions of Armenia as compared to the most similar 
+economies of the world, such as Romania, Hungary, Ukraine, Georgia, Belarus.
+Also in our analysis would be included the results of some developed or develping countries as to compare their results with Armenian indicators in order to understand what we need to do to have strong and developing economy.
+Notably, we are not going to get deeper into art of economics but rather to visualize and explore some interesting patterns and insights from data, taking into account the context of our Homework.
+
+The first dataset that we are going to use is UN Gloabal Indicators, kindly provised by United Nations. Information about the documentation may be accessed through the following link>>> https://www.quandl.com/data/UGID-United-Nations-Global-Indicators
+
+```{r warning=FALSE ,message=FALSE, echo=FALSE}
+Quandl.api_key("T8eKnqyBpRcbmwojJS_w")
+int_rate_ARM=Quandl("UGID/IFIR_ARM", type="raw") ### Interest rates for Armenia
+int_rate_ROU=Quandl("UGID/IFIR_ROU", type="raw") ### Interest rates for Romania
+int_rate_HUN=Quandl("UGID/IFIR_HUN", type="raw") ### Interest rates for Hungary
+int_rate_UKR=Quandl("UGID/IFIR_UKR", type="raw") ### Interest rates for Ukraine
+int_rate_GEO=Quandl("UGID/IFIR_GEO", type="raw") ### Interest rates for Georgia
+int_rate_RUS=Quandl("UGID/IFIR_RUS", type="raw") ### Interest rates for Russia
+
+### Apparnetly data has many NAs missing values but deleting this rows will 
+### destroy the dataset... Generlaly we may impute dataset with values,but you ### will see that the values have very big range and simply coding 
+### na.exclude()will not help to our project
+int_rate_CHN=Quandl("UGID/IFIR_CHN", type="raw") ### Interest rates for China
+int_rate_JPN=Quandl("UGID/IFIR_JPN", type="raw") ### Interest rates for Japan
+int_rate_FRA=Quandl("UGID/IFIR_FRA", type="raw") ### Interest rates for France
+
+### Let's understand the interest rate patterns in Armenia and compartive to it other four
+### countries: Romania, Hungary, Ukraine, Georgia
+
+# Defyining function to repalces spaces in the column names with underscores... for feature # retrieval from the dataset
+col_trans<-function(df){
+  setnames(df,old=colnames(df),new=str_replace_all(colnames(df),' ','_'))
+}
+c_list<-list(int_rate_ARM,int_rate_ROU,int_rate_HUN,int_rate_UKR,int_rate_GEO,int_rate_RUS)
+for (i in c_list){
+  col_trans(i)
+}
+c_d_list<-list(int_rate_CHN,int_rate_JPN,int_rate_FRA)
+for (i in c_d_list){
+  col_trans(i)
+}
+
+ggplot(int_rate_ARM,aes(x=Date,y=LENDING_RATE))+geom_line()+labs(title='Historical Lending Rate in Armenia',x='Years',y='Rate in %')
+## Generally we may observe that rate have been decreasing from the end of 1990s
+## Let's compare with four other similar to Armenia in economic terms countries
+```
+
+
+Generally we may observe that rate have been decreasing from the end of 1990s.
+Now let's compare with four other similar to Armenia in economic terms countries such as Romania,Hungary,Ukraine,Georgia and also Russia.
+
+
+```{r warning=FALSE,message=FALSE,echo=FALSE}
+## Creating one dataset
+
+int_rate_ARM$COUNTRY<-"ARM"
+int_rate_ROU$COUNTRY<-"ROU"
+int_rate_HUN$COUNTRY<-"HUN"
+int_rate_UKR$COUNTRY<-"UKR"
+int_rate_GEO$COUNTRY<-"GEO"
+int_rate_RUS$COUNTRY<-"RUS"
+
+## Developed Countries
+
+int_rate_CHN$COUNTRY<-"CHN"
+int_rate_JPN$COUNTRY<-"JPN"
+int_rate_FRA$COUNTRY<-"FRA"
+
+sim_col<-Reduce(intersect,list(colnames(int_rate_ARM),colnames(int_rate_ROU),colnames(int_rate_HUN),colnames(int_rate_UKR),colnames(int_rate_GEO),colnames(int_rate_RUS)))
+
+sim_d_col<-Reduce(intersect,list(colnames(int_rate_ARM),colnames(int_rate_CHN),colnames(int_rate_JPN),colnames(int_rate_FRA)))
+
+int_rate_ARM<-int_rate_ARM%>%
+  select(sim_col)
+int_rate_ROU<-int_rate_ROU%>%
+  select(sim_col)
+int_rate_HUN<-int_rate_HUN%>%
+  select(sim_col)
+int_rate_UKR<-int_rate_UKR%>%
+  select(sim_col)
+int_rate_GEO<-int_rate_GEO%>%
+  select(sim_col)
+int_rate_RUS<-int_rate_RUS%>%
+  select(sim_col)
+
+
+int_rate_ARM_d<-int_rate_ARM%>%
+  select(sim_d_col)
+int_rate_CHN<-int_rate_CHN%>%
+  select(sim_d_col)
+int_rate_JPN<-int_rate_JPN%>%
+  select(sim_d_col)
+int_rate_FRA<-int_rate_FRA%>%
+  select(sim_d_col)
+
+
+df_lend_rate_5c<-rbind(int_rate_ARM,int_rate_ROU,int_rate_HUN,int_rate_UKR,
+                       int_rate_GEO,int_rate_RUS)
+
+df_lend_rate_5c_d<-rbind(int_rate_ARM_d,int_rate_CHN,int_rate_JPN,int_rate_FRA)
+
+df_lend_rate_5c%>%
+  group_by(COUNTRY)%>%
+ggplot(aes(x=Date,y=LENDING_RATE,by=COUNTRY,color=COUNTRY))+geom_line()+
+  coord_cartesian(xlim=c(as.Date('1990-01-01'),as.Date('2010-01-01')))+labs(title='Historical Lending Rate by countries',x='Years',y='Rate in %')
+```
+
+
+This graph depicts the situation with lending rates in Armenia and other, similar to Armenia in economic terms countries. The rates appears to be extremelly high particularly with Russia (more than 300% !!!)and Ukraine during 90th.
+
+
+
+```{r message=FALSE,warning=FALSE,echo=FALSE}
+df_lend_rate_5c%>%
+  group_by(COUNTRY)%>%
+ggplot(aes(x=Date,y=DEPOSIT_RATE,by=COUNTRY,color=COUNTRY))+geom_line()+
+  coord_cartesian(xlim=c(as.Date('1990-01-01'),as.Date('2010-01-01')))+labs(title='Historical Deposit Rate by countries',x='Years',y='Rate in %')
+```
+
+The above graph visualizes the historical deposit rates in Armenia and five other countries. We observe that again the highest rates have Ukraine more than 200% and Russia with around 100% at the beginning. However this changes with time.
+
+
+```{r message=FALSE,warning=FALSE,echo=FALSE}
+### Armenia VS Deveoped countries and Russia
+df_lend_rate_5c_d%>%
+  group_by(COUNTRY)%>%
+ggplot(aes(x=Date,y=LENDING_RATE,by=COUNTRY,color=COUNTRY))+geom_line()+labs(title='Historical Lending Rate Armenia VS Developed Countries',x='Years',y='Rate in %')
+```
+
+
+This graphs clearly transmits the message that high lending rates during the 90s were not all over the world. Even few historical lending rates of China, France and Japan proves that high rates identified in Armenia, Russia and Ukraine were caused by some other factors.
+
+
+
+```{r message=FALSE,warning=FALSE,echo=FALSE}
+df_lend_rate_5c_d%>%
+  group_by(COUNTRY)%>%
+ggplot(aes(x=Date,y=DEPOSIT_RATE,by=COUNTRY,color=COUNTRY))+geom_line()+labs(title='Historical Deposit Rate Armenia VS Developed Countries',x='Years',y='Rate in %')
+```
+
+To conclude, many countries have the same fate as Armenia and even worse in terms of high Lending Rates during 90s, but gradually Lending Rates decrease and bundle around 20 percent. The ones with extremelly high rates were part of USSR, which dissolved On December 25, 1991, ruining economies of countries which were once parts of it, including Armenia. 
+
+
+Now let's explore UN National Account Estimates dataset by using API. Documentation for this dataset follows>>> https://www.quandl.com/data/UNAE-United-Nations-National-Accounts-Estimates/documentation/data-organization 
+
+
+
+```{r warning=FALSE,message=FALSE,echo=FALSE}
+gdp_list<-list()
+
+cr_df_UNAE<-function(f_code,c_code){
+  for (i in c_code){
+    arg<-paste0('UNAE/',f_code,i,collapse = '')
+    df=Quandl(arg,type = 'raw')
+    attr(df,'Country_name')<-c_code
+    gdp_list<-list.append(gdp_list,df)
+  
+  }
+  return(gdp_list)
+}
+gdp<-cr_df_UNAE('GDPCD_',list('ARM','GEO','RUS','UKR','BLR','HUN','ROU','USA','FRA','DEU','CHN'))
+
+for (i in 1:length(gdp)){
+  gdp[[i]]$Country<-attr(gdp[[i]],'Country')[i]
+}
+for (i in gdp){
+  col_trans(i)
+}
+
+df_gdp<-bind_rows(gdp) ### Creating big dataset with all countries
+colnames(df_gdp)[10]<-'GDP'
+options(scipen=666)
+### Let's create a scatterplot with all GDP's by years
+
+gdp<-df_gdp%>%
+  select('Date','GDP','Country')
+gdp$Country<-as.character(gdp$Country)
+
+gdp%>%
+  group_by(Country)%>%
+  ggplot(aes(x=Date,y=GDP,color=Country,shape=Country))+geom_line()+labs(
+    title='GDP of Developed and Developing countries during 1970-2016'
+  )
+```
+The above graph is the first visualization which is related to UN National Accounts Estimates dataset. It shows the historical annual GDP of several Developed and Developing countries. Clearly Armenia and other developing countries are far behind USA and China; the giant drivers of Global Economy. USA shows steady increase during the whole period. Nonetheless,
+China has shown unprecendented growth rates from 2005 and clearly shows the patterns of catching up to USA in near future!!! 
+
+```{r message=FALSE,warning=FALSE,echo=FALSE}
+gdp%>%
+  group_by(Country)%>%
+  filter(Country %in% c('ARM','GEO','UKR','BLR','HUN','ROU'))%>%
+  ggplot(aes(x=Date,y=GDP,color=Country,shape=Country))+geom_line()+labs(
+    title='GDP of Developing countries in years 1970-2016'
+  )
+```
+
+In order to see the patterns in Armenian GDP, let's turn to the subgroup in which Armenia may identified. The above graphs shows the history of Armenian GDP, which unfortunatelly is not so outstanding. Our GDP is on the last place compared to other countries of interest. Hence, we have room to develop our economy and to increase Gross Domestic Product.
+
+
+```{r message=FALSE,warning=FALSE,echo=FALSE}
+gdp%>%
+  group_by(Country)%>%
+  filter(Country %in% c('ARM','GEO','UKR','BLR','HUN','ROU'))%>%
+  ggplot(aes(x=Country,y=GDP,fill=Country,shape=Country))+geom_boxplot()+labs(title='GDP by countries',x='Country',y='GDP in $')
+```
+
+The above visualization also shows GDP of Developing countries in the format of boxplot.
+
+```{r message=FALSE,warning=FALSE,echo=FALSE}
+gdp%>%
+  group_by(Country)%>%
+    filter(Country %in% c('ARM','RUS','USA','FRA','DEU','CHN'))%>%
+  ggplot(aes(x=Country,y=GDP,fill=Country,shape=Country))+geom_boxplot()+labs(title='GDP by developed countries VS Armenia',x='Country',y='GDP in $')
+
+```
+
+This graph may seem to be not so useful to identify new insights for Armenia, but let's turn our look to China. We may observe seven outliers and all of them lie on the upper side of boxplot which in reality is great as economy is developing and increasing with unprecendented in its history temps. This brings
+the question which actions China takes to achieve this and what small Armenia with its current economy and political situation may employ to achieve similar results.
+
+Let's look what differentiates developed countries from Armenia by looking at export and import information.
+
+```{r warning=FALSE ,message=FALSE, echo=FALSE}
+ex_imp<-df_gdp%>%
+  select('Date','Exports_of_goods_and_services','Imports_of_goods_and_services','Country')
+ex_imp$Country<-as.character(gdp$Country)
+
+ex_imp%>%
+  group_by(Country)%>%
+  filter(Country %in% c('ARM','GEO','UKR','BLR','HUN','ROU'))%>%
+  ggplot(aes(x=Country,y=Imports_of_goods_and_services,fill=Country,shape=Country))+geom_boxplot()+labs(title='Imports of goods and services',x='Country',y='Exports in USD')
+```
+
+The following graph also confirms that Armenia does not import as much as other comparative countries. But by our volumes we are very close to Georgia.
+
+
+```{r message=FALSE,warning=FALSE,echo=FALSE}
+ex_imp%>%
+  group_by(Country)%>%
+  filter(Country %in% c('ARM','GEO','UKR','BLR','HUN','ROU'))%>%
+  ggplot(aes(x=Country,y=Exports_of_goods_and_services,fill=Country,shape=Country))+geom_boxplot()+labs(title='Exports of goods and services',x='Country',y='Exports in USD')
+```
+
+As we may clearly observe Imports and Exports of Armenia are significantly lower compared to other countries of interest. Probably the most logical reason is its isolation from two sides by our hostile neighbours. Our 'route of life'
+is the road which connects with Iran and Georgia. Nonetheless, we may observe the slight dominance of Imports compared to Exports in Armenia. Let's look closer to this observation by ploting the disctribution.
+
+In addition Romania also shows very sound signs of increasing volumes in Exports as several outliers lie higher and the median is somewhat shifted towards 25-th percentile of the boxplot.
+
+```{r warning=FALSE ,message=FALSE, echo=FALSE}
+ex_imp%>%
+  group_by(Country)%>%
+  filter(Country =='ARM')%>%
+  ggplot(aes(x=Imports_of_goods_and_services))+geom_density(color='red',fill='grey')+labs(title='Imports of goods and services in Armenia 1990-2016',x='Imports in $', y = 'Density')
+```
+
+Let's explore the Exporting and Importing patters of Armenia by using density plots and compare Imports to Exports.
+
+
+```{r warning=FALSE ,message=FALSE, echo=FALSE}
+ex_imp%>%
+  group_by(Country)%>%
+  filter(Country =='ARM')%>%
+  ggplot(aes(x=Exports_of_goods_and_services))+geom_density(color='blue',fill='grey')+labs(title='Exports of goods and services in Armenia 1990-2016',x='Imports in $')
+```
+
+The density graphs of Exports into and Imports from Armenia clearly convey the message that Armenia is importing more than exporting. This is called 'negative trade balance'. Let's explore whether the situation is the same with other countries, particularly developed ones.
+
+
+```{r warning=FALSE ,message=FALSE, echo=FALSE}
+
+options(knitr.table.format = "latex")
+
+
+ex_imp%>%
+  group_by(Country)%>%
+  filter(Country %in% c('ARM','GEO','UKR','BLR','HUN','ROU'))%>%
+  ggplot(aes(x=Imports_of_goods_and_services,y=Exports_of_goods_and_services,fill=Country,by=Country,color=Country))+geom_line()+labs(title='Exports VS Imports by countries',x='Imports in USD',y='Exports in USD')+facet_grid(Country~.)
+```
+
+The faceted graph shows that this is not the deal and conversely all countries have steady increasing trend of Exports as compared to Imports. Whereas Armenia shows a somewhat straight line or even downward trend. Let's explore further.
+
+
+```{r message=FALSE,warning=FALSE,echo=FALSE}
+ex_imp%>%
+  group_by(Country)%>%
+  filter(Country =='ARM')%>%
+  ggplot(aes(x=Imports_of_goods_and_services,y=Exports_of_goods_and_services,fill=Country,by=Country))+geom_line()+labs(title='Imports VS Exports of goods and services in Armenia',x='Imports in USD',y='Exports in USD')+ geom_abline(intercept = 0, slope = 1,color='red')
+```
+
+This graph clearly shows the situation with Armenian Exports and Imports.
+**`r text_spec("The red line", color = "red")`** shows the **Zero Trade Balance**, which may be observed when a country exports as much as it imports.
+Unfortunatelly, this is not the deal with Armenia, which lag behind its imports. To support our theory let's look at the Export and Imports of some developed countries, particularly China and USA.
+
+```{r message=FALSE,warning=FALSE,echo=FALSE}
+ex_imp%>%
+  group_by(Country)%>%
+  filter(Country =='USA')%>%
+  ggplot(aes(x=Imports_of_goods_and_services,y=Exports_of_goods_and_services,fill=Country,by=Country))+geom_line()+labs(title='Imports VS Exports of goods and services in United States',x='Imports in USD',y='Exports in USD')+ geom_abline(intercept = 0, slope = 1,color='red')
+
+ex_imp%>%
+  group_by(Country)%>%
+  filter(Country =='CHN')%>%
+  ggplot(aes(x=Imports_of_goods_and_services,y=Exports_of_goods_and_services,fill=Country,by=Country))+geom_line()+labs(title='Imports VS Exports of goods and services in China',x='Imports in USD',y='Exports in USD')+ geom_abline(intercept = 0, slope = 1,color='red')
+
+```
+As a matter of fact, as previously mentioned **`r text_spec("the red line", color = "red")`** in each graph denotes the **`r text_spec("Zero Trade Balance", color = "red")`** for that particular country. We may clearly observe that Armenia is under the **`r text_spec("Zero Trade Balance", color = "red")`** line, hence it imports more than exports, whereas for developed countries such as China or USA their respective Trade Balance lines are very close or even higher than Zero Trade Balance.In case of China it is substantially increasing from year to year making China number one exporter of goods worldwide.
+```{r message=FALSE,warning=FALSE,echo=FALSE}
+ex_imp%>%
+  group_by(Country)%>%
+  filter(Country =='ARM')%>%
+  ggplot(aes(x=Date,y=Exports_of_goods_and_services))+geom_line()+labs(title='Historical Exports of goods and services in Armenia',x='Date',y='Exports in USD')
+```
+By further examining the historical patterns in exports of Armenia we may observe that the were some shock periods, particularly between 2009-2010 when the echoes of Global Financial Crisis reached Armenian economy but fortunatelly it was able to recover.
+
+To summarize, this mini project may not cover all vital points for comprehensive analysis of Armenian economy taking into the context of homework.
+
+Nevertheless this work may be a good starting point for future analysis, which will aim to identify useful patters to use in order to improve Armenian economy and develop the country.
+
+-----------------------------------------------------------------------
+
+\newpage
+
+# Web Scraping and Text Mining
+
+In this part we are going to use web scraping, text mining, regular expressions and data manipulation techniques in order to conduct an analysis of recent events that happened in Armenia.
+To further explain our goal, we are going to analyse the "Armenian Velvet Revolution" phenomenon from different perspectives. We will use International (Europe, US, etc.), Russian and Armenian news sources for conducting an analysis of attitudes towards the event and understanding the differences.
+
+```{r warning = FALSE, message = FALSE, echo = FALSE}
+
+sources <- data.frame(Article = as.character(),
+                      Date = as.character(),
+                      Region = as.character(),
+                      Timeline = as.character(),
+                      stringsAsFactors = F)
+
+```
+Our first step was to prepare tools and variables for retrieving and keeping information from news sources.
+We have created an empty data-frame with variables corresponging to Articles, Dates, Regional category and timeline indicator (before or during).
+
+```{r warning = FALSE, message = FALSE, echo = FALSE}
+
+source_catcher <- function(sources,index,url,text_element,date_element = NULL, source_Region){
+  txt <- read_html(url) %>%
+    html_nodes(text_element) %>%
+    html_text() %>%
+    paste(collapse = " ")
+  eval.parent(substitute(sources[index,1]<-txt)) 
+  
+  if(!is.null(date_element)){ 
+  dat <- read_html(url) %>%
+    html_node(date_element) %>%
+    html_text()
+  eval.parent(substitute(sources[index,2]<-dat)) 
+}
+  
+  eval.parent(substitute(sources[index,3]<-source_Region)) 
+  
+}
+
+```
+
+
+Next step was the creation of a universal function for scraing texts from web. The function operates by taking url, index, regional indicator and a text selector coupled with a date selector of webpages and putting all together into the previously initialized data-frame.
+
+```{r warning = FALSE, message = FALSE, echo = FALSE}
+
+source_catcher(sources, 1,"https://news.am/eng/news/447914.html","p+ p , #feed_height_param p:nth-child(1)",".time","Armenian")
+source_catcher(sources, 2,"https://news.am/eng/news/446477.html","#feed_height_param p",".time","Armenian")
+source_catcher(sources, 3,"http://arminfo.info/full_news.php?id=30467&lang=3",".intrig_style p",".intrig_style div:nth-child(1)","Armenian")
+source_catcher(sources, 4,"https://www.azatutyun.am/a/29214870.html", "#article-content > div.wsw", "time","Armenian")
+source_catcher(sources, 5,"https://www.civilnet.am/news/2018/04/27/How-The-World-Sees-The-Velvet-Revolution/335224","p+ p",".date-txt","Armenian")
+
+Sys.setlocale("LC_CTYPE", "russian")
+source_catcher(sources, 6,"https://meduza.io/news/2018/04/22/v-moskve-u-armyanskoy-tserkvi-zaderzhali-mitinguyuschih-oni-ustroili-aktsiyu-v-podderzhku-protestov-v"
+               ,"p",".MaterialMeta MaterialMeta--time","Russian")
+source_catcher(sources, 7, "https://www.rbc.ru/rbcfreenews/5ae046e89a79471c04280ebe", ".article__picture~ p",
+               ".article__header__story+ .article__header__date","Russian")
+source_catcher(sources, 8, "https://www.rbc.ru/rbcfreenews/5adc9bba9a794727c661e540", ".g-zindex-top+ .js-rbcslider-article p",
+               ".article__header__story+ .article__header__date", "Russian")
+source_catcher(sources, 9, "https://www.svoboda.org/a/29174776.html", "p", "time", "Russian")
+
+
+
+source_catcher(sources, 10, "https://www.currenttime.tv/a/29187295.html", "p , .intro--bold", source_Region =  "Russian")
+source_catcher(sources, 11, "http://www.ntv.ru/novosti/2005924/", "#inpagetext", ".newsdate","Russian")
+
+## adding global sources
+source_catcher(sources, 12, "https://www.bbc.com/news/world-europe-43948181",
+               ".story-body", '.date--v2', "Global")
+
+source_catcher(sources, 13, "https://www.npr.org/sections/thetwo-way/2018/05/08/609364542/leader-of-armenias-velvet-revolution-takes-power-after-weeks-of-protests", 
+               "#storytext", '.date', "Global")
+
+source_catcher(sources, 14, "http://www.latimes.com/world/europe/la-fg-armenia-election-20180508-story.html", 
+               "#fbJAgN162HSSSq > div.collection.collection-cards", '.timestamp-article', "Global")
+
+source_catcher(sources, 15, "https://www.theguardian.com/world/2018/may/08/hes-not-a-populist-hes-popular-nikol-pashinyan-becomes-armenian-pm", 
+               "#article > div.content__main.tonal__main.tonal__main--tone-news > div > div.content__main-column.content__main-column--article.js-content-main-column > div",
+               '.content__dateline-wpd--modified', "Global")
+
+source_catcher(sources, 16, "http://www.latimes.com/world/europe/la-fg-armenia-election-20180507-story.html", 
+               "#fbJAgN162HSSSq > div.collection.collection-cards", '.timestamp-article', "Global")
+
+source_catcher(sources, 17, "https://www.aljazeera.com/indepth/opinion/armenia-velvet-revolution-masterclass-socialism-180507093619273.html", 
+               ".article-p-wrapper", '.timeagofunction', "Global")
+
+source_catcher(sources, 18, "https://www.nytimes.com/2018/04/23/world/europe/armenia-prime-minister-protests.html", 
+               '#story', '.eqgapgq0', "Global")
+
+source_catcher(sources, 19, "https://old.civil.ge/eng/article.php?id=31041", 
+               '#maintext', '.botoomtext', "Global")
+
+source_catcher(sources, 20, "https://www.washingtonpost.com/world/europe/armenias-pro-democracy-movement-defiant-in-face-of-parliament-rejection/2018/05/02/dbb57c0a-4de7-11e8-84a0-458a1aa9ac0a_story.html?noredirect=on&utm_term=.016bf6ed063e", 
+               '#article-body > article', '.botoomtext', "Global")
+
+source_catcher(sources, 21, "https://www.economist.com/europe/2018/05/03/armenias-revolution-continues-as-its-opposition-leader-nears-power", 
+               'div.blog-post__text', '.blog-post__datetime', "Global")
+
+
+Encoding(sources[6:11, 1]) <- "UTF-8" #helps encode russian articles
+
+
+sources[6, 2] <- "22 Apr 2018"
+sources[10, 2] <- "22.04.2018"
+sources[15, 2] <- "Tue 8 May 2018 11.22 BST"
+sources[20, 2] <- "May 2"
+
+```
+
+We have 21 source webpages that are classified by 3 tags: Global, Russian and Armenian.
+
+\hfill\break
+
+**Here are the links for the webpages:**
+
+Global Sources:
+
+* https://www.bbc.com/news/world-europe-43948181
+* https://www.npr.org/sections/thetwo-way/2018/05/08/609364542/leader-of-armenias-velvet-revolution-takes-power-after-weeks-of-protests
+* http://www.latimes.com/world/europe/la-fg-armenia-election-20180508-story.html
+* https://www.theguardian.com/world/2018/may/08/hes-not-a-populist-hes-popular-nikol-pashinyan-becomes-armenian-pm
+* http://www.latimes.com/world/europe/la-fg-armenia-election-20180507-story.html
+* https://www.aljazeera.com/indepth/opinion/armenia-velvet-revolution-masterclass-socialism-180507093619273.html
+* https://www.nytimes.com/2018/04/23/world/europe/armenia-prime-minister-protests.html
+* https://old.civil.ge/eng/article.php?id=31041
+* https://www.washingtonpost.com/world/europe/armenias-pro-democracy-movement-defiant-in-face-of-parliament-rejection/2018/05/02/dbb57c0a-4de7-11e8-84a0-458a1aa9ac0a_story.html?noredirect=on&utm_term=.016bf6ed063e
+* https://www.economist.com/europe/2018/05/03/armenias-revolution-continues-as-its-opposition-leader-nears-power
+
+
+Armenian Sources:
+
+* https://news.am/eng/news/447914.html
+* https://news.am/eng/news/446477.html
+* http://arminfo.info/full_news.php?id=30467&lang=3
+* https://www.azatutyun.am/a/29214870.html
+* https://www.civilnet.am/news/2018/04/27/How-The-World-Sees-The-Velvet-Revolution/335224
+
+
+Russian Sources:
+
+* https://meduza.io/news/2018/04/22/v-moskve-u-armyanskoy-tserkvi-zaderzhali-mitinguyuschih-oni-ustroili-aktsiyu-v-podderzhku-protestov-v
+* https://www.rbc.ru/rbcfreenews/5ae046e89a79471c04280ebe
+* https://www.rbc.ru/rbcfreenews/5adc9bba9a794727c661e540
+* https://www.svoboda.org/a/29174776.html
+* https://www.currenttime.tv/a/29187295.html
+* http://www.ntv.ru/novosti/2005924/
+* https://rtvi.com/stories/pobeda-barkhatnoy-revolyutsii-v-postsovetskoy-strane/
+
+\newpage
+
+Now the Russian sources have the articles mainly in Russian, and as acquiring the Google translate api key was not possible at the time, we manually translated these documents using Google and stored them in a csv file. We also added the missing dates in the dataset. Although loss in translation can occur, we are mostly concerned about the words and not the meaning, so this time of machine translation will suffice.
+
+Note: We will attach the required "Ru_En_Articles.csv" file, so please have it in the directory
+
+```{r message = FALSE, warning = FALSE, echo = FALSE}
+sources[6, 2] <- "22 Apr 2018"
+sources[10, 2] <- "22.04.2018"
+sources[15, 2] <- "Tue 8 May 2018 11.22 BST"
+sources[20, 2] <- "May 2"
+
+
+## We need to translate the russian documents to English in order to obtain a more coherent
+## analysis as the inbuilt
+## language is english we will import the google translated versions of these documents 
+## from a csv file
+
+translated <- read.csv("Ru_En_Articles.csv", stringsAsFactors = F)
+
+sources[6,1] <- translated[1,1]
+sources[7,1] <- translated[2,1]
+sources[8,1] <- translated[3,1]
+sources[9,1] <- translated[4,1]
+sources[10,1] <- translated[5,1]
+sources[11,1] <- translated[6,1]
+```
+
+Before we clean the articles, we need to format the dates. However, in web scraping, dates can be found in various formats and in our case, no specific format could have been salvaged that could fit all of the dates.
+
+However, through observation we noticed that all the articles had May 8th as the latest possible date, hence any article with a date other that the 8th would be recording the events during the revolution, otherwise it takes after.
+
+All that remained was to extract unneeded characters such as hours, year and month dates. 
+We used several regular expressions for this goal.
+
+Finally, we are left with: 
+
+```{r message = FALSE, warning = FALSE, echo = FALSE}
+
+sources$Date <- str_remove_all(sources$Date, "[0-9]+\\:[0-9]+")
+sources$Date <- str_remove_all(sources$Date, "\\s[0-9]+\\.[0-9]+\\s")
+sources$Date <- str_remove_all(sources$Date, "2018")
+sources$Date <- str_remove_all(sources$Date, "\\'18")
+sources$Date <- str_replace_all(sources$Date, "[^0-9]", " ")
+sources$Date <- str_remove_all(sources$Date, "04")
+sources$Date <- str_remove_all(sources$Date, "0")
+
+sources$Date <- trimws(sources$Date) %>%
+  as.numeric()
+
+sources$Timeline = ifelse(sources$Date == 8,"After","During")
+
+head(sources$Date)
+```
+
+Having done so, we were able to determine the timeline of the articles and begin working with wordclouds and other types of analysis.
+
+For the Russian sources, here are the top 5 appearing words:
+```{r message=FALSE,warning=FALSE,echo=FALSE}
+articles <- sources[, 1]
+
+## we will remove these obvious words from our observations
+obvious_words <- c("sargsyan", "pashinian", "pashinyan", "yerevan", "armenia", "armenian", "serzh", "president", "april", "said", "will")
+
+## russian sources
+russian <- VCorpus(VectorSource(articles[6:11]))
+russian <- tm_map(russian, content_transformer(tolower))
+russian_new <- tm_map(russian, removeWords, obvious_words)
+
+russian_tdm <- TermDocumentMatrix(russian_new, control = list(removeNumbers=T,removePunctuation=T,
+                                                     stopwords=T,stemming=T))
+rus_mat <- as.matrix(russian_tdm)
+rus_freqs <- rowSums(rus_mat)
+df_freq_rus <- data.frame(terms = rownames(rus_mat),
+                    freq = rus_freqs, stringsAsFactors = F)
+df_freq_rus <- df_freq_rus[order(df_freq_rus$freq ,decreasing = T),]
+head(df_freq_rus,5)
+```
+
+An initial guess would be that the Russian outlets may be focused on the chaos during the revolution. 
+
+It is worth noting that none of the Russian sources have a date of may 8th.
+
+```{r message=FALSE,warning=FALSE,echo=FALSE}
+wordcloud(words = df_freq_rus$terms, freq = df_freq_rus$freq, 
+          min.freq = 2,max.words = 300, 
+          random.order = FALSE, colors = brewer.pal(8, "Dark2"))
+```
+
+The focus is mostly on the governing body and the opposition that it is facing.
+
+
+Here are the top 5 words for Armenian sources along with the word cloud:
+
+```{r message=FALSE,warning=FALSE,echo=FALSE}
+## armenian sources
+armenian <- VCorpus(VectorSource(articles[1:5]))
+armenian <- tm_map(armenian, content_transformer(tolower))
+armenian_new <- tm_map(armenian, removeWords, obvious_words)
+
+
+arm_tdm <- TermDocumentMatrix(armenian_new, control = list(removeNumbers=T,removePunctuation=T,
+                                                        stopwords=T,stemming=T))
+arm_mat <- as.matrix(arm_tdm)
+arm_freqs <- rowSums(arm_mat)
+df_freq_arm <- data.frame(terms = rownames(arm_mat),
+                          freq = arm_freqs, stringsAsFactors = F)
+df_freq_arm <- df_freq_arm[order(df_freq_arm$freq ,decreasing = T),]
+head(df_freq_arm,5)
+
+## armenian wordcloud
+wordcloud(words = df_freq_arm$terms, freq = df_freq_arm$freq, 
+          min.freq = 2,max.words = 300, 
+          random.order = FALSE, colors = brewer.pal(8, "Dark2"))
+```
+
+Although the top 5 words were similar to the Russian sources, but the wordcloud displays more supportive words within the context of the revolution compared to the Russian counterpart.
+
+Lastly, the global (international) sources:
+
+```{r message=FALSE,warning=FALSE,echo=FALSE}
+## global sources
+global <- VCorpus(VectorSource(articles[12:21]))
+global <- tm_map(global, content_transformer(tolower))
+global_new <- tm_map(global, removeWords, obvious_words)
+
+global_tdm <- TermDocumentMatrix(global_new, control = list(removeNumbers=T,removePunctuation=T,
+                                                      stopwords=T,stemming=T))
+global_mat <- as.matrix(global_tdm)
+global_freqs <- rowSums(global_mat)
+df_freq_global <- data.frame(terms = rownames(global_mat),
+                          freq = global_freqs, stringsAsFactors = F)
+df_freq_global <- df_freq_global[order(df_freq_global$freq ,decreasing = T),]
+head(df_freq_global)
+
+
+## global wordcloud
+wordcloud(words = df_freq_global$terms, freq = df_freq_global$freq, 
+          min.freq = 2, max.words = 300, 
+          random.order = FALSE, colors = brewer.pal(8, "Dark2"))
+```
+
+The top words are once again the same. But the wording seems balanced and not skewed in any particular dimension.
+
+We now move on to the final aspect, that is sentiment analysis.
+
+With the use of the qdap library, we were able to extract the following analysis from the articles with the comparison point being whether they were published before or after May 8th.
+
+```{r message = FALSE, warning = FALSE, echo = FALSE}
+
+## Sentiment Analysis
+During_vs_After <- scores(polarity(text.var = sources$Article, grouping.var = sources$Timeline))
+#we may conclude there is no difference
+head(During_vs_After)
+```
+
+The sentiment analysis results show that the overall polarity is negative regardless of the time of publishing. This is to be expected as it may be abnormal to see overly positive sentiments from these type of political reports.
+
+Let's do the same by region.
+```{r message = FALSE, warning = FALSE, echo = FALSE}
+By_regions<-scores(polarity(text.var = sources$Article,grouping.var = sources$Region))
+By_regions
+
+```
+
+We See that the Armenian news outlets show a less negative polarity, this may be due to the inclusion of pro revolution websites within the sources. Other than that, the global sources (10 articles) show the most negative polarity overall.
+
+
+Lastly, we form a comparison cloud between Armenian and Global sources for a better contrast.
+
+```{r message=FALSE,warning=FALSE,echo=FALSE}
+arm<-sources%>%
+  filter(Region == "Armenian") %>%
+  select(Article)
+
+glob<-sources%>%
+  filter(Region == "Global")  %>%
+  select(Article)
+
+armen <- paste(arm,collapse = "")
+global <- paste(glob,collapse = "")
+arm_glob <- c(armen,global)
+
+arm_glob_vc <- VCorpus(VectorSource(arm_glob))
+arm_glob_vc_new <- tm_map(arm_glob_vc, removeWords, obvious_words)
+
+arm_glob_tdm <- TermDocumentMatrix(arm_glob_vc_new, control = list(removePunctuation=T,
+                                                            removeNumbers=T,
+                                                            stopwords=T,
+                                                            stemming=T))
+
+ag_m <- as.matrix(arm_glob_tdm)
+
+colnames(ag_m) <- c("Armenia", "Global")
+
+comparison.cloud(ag_m, max.words = 50, colors = c("black","red"),
+                 random.order = F)
+
+
+```
+From the last result, we understand that the global outlets, were concerned about the revolution and about the Soviet connection throughout, while the Armenian sources mostly displayed an outlook supportive of the revolution and the change.
+
+

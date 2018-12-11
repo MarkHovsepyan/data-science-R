@@ -1,0 +1,32 @@
+---
+title: "Group Project"
+author: "Karen Mkhitaryan"
+date: "August 4, 2018"
+output: pdf_document
+---
+
+Group Project
+-----------------------
+
+In the group project you will need to do the following:
+
+#- Use the topics that we have covered during the lectures.
+    Group Project will be graded based on complexity so using multiple topics (ex. Quantitative     Analysis, Text mining, Web scraping) is desired.
+
+#- Create a shiny app at the end.
+
+--------------------------------
+Submission
+
+- Submit the .Rmd file containing the R script of data preparation part.
+- Send the https://shinyapps.io link of the Shiny app.
+- Submit Shiny server and UI scripts.
+- If you have used complicated techniques which needs explanation (ex. extensive data            cleaning, data transformation, etc), submit also a pdf report explaining what you have done.
+
+
+----------------------
+Grading
+
+- How complicated was the group project. (How many topics or techniques were used from           the lectures).
+- How well the work was presented and how actual was it.
+

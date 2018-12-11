@@ -1,0 +1,33 @@
+---
+title: "Shiny"
+author: "Karen Mkhitaryan"
+date: "July 26, 2018"
+output: pdf_document
+---
+
+#Task
+
+In our lectures, we talked about how to get data from nba.com. 
+------------------
+Your goal is to download certain data from there (whatever you want) and make a shiny dashboard to vizualize and summarize the results. 
+
+You need to do some extra research on the meaning of the variables and statistics. Nba.com is a good source.
+------------------
+Note!!!
+NBA API is not officially documented, so you need to do try/error until will get what you want. So I suggest you to start as soon as possible.
+
+This is an individual project.
+The probability that two students will end up with the same shiny app is zero.
+
+If you have some other sport-related idea, let me know we can discuss.
+-----------------
+You need to
+  - Submit R shiny code.
+  - Upload your app to shinyapps.io.
+  - Send the link
+
+
+
+
+
+

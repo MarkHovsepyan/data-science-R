@@ -1,0 +1,13 @@
+name: NBAPlayerComparison
+title: NBAPlayerComparison
+username:
+account: markhovs
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 393865
+bundleId: 1514853
+url: https://markhovs.shinyapps.io/NBAPlayerComparison/
+when: 1533227409.29077
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: Homework #5 (Shiny).Rmd|homework5_link.txt|shedevr.R
